@@ -4,6 +4,7 @@ import com.cgvsu.math.Vector2f;
 import com.cgvsu.math.Vector3f;
 import com.cgvsu.model.Model;
 import com.cgvsu.model.Polygon;
+import com.cgvsu.objreader.ObjReaderException;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -26,7 +27,7 @@ public class ObjWriter {
                 System.out.println("Файл уже существует.");
             }
         } catch (IOException e) {
-            System.err.println("Ошибка при создании файла: " + e.getMessage());
+            throw new ObjWriterException(e.getMessage());
         }
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
@@ -35,7 +36,7 @@ public class ObjWriter {
             writeNormals(writer, model.normals);
             writePolygons(writer, model.polygons);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new ObjWriterException(e.getMessage());
         }
     }
 
@@ -80,19 +81,25 @@ public class ObjWriter {
             List<Integer> normalIndices = polygon.getNormalIndices();
 
             for (int i = 0; i < vertexIndices.size(); i++) {
-                writer.write(vertexIndices.get(i) + 1 + "/" + textureVertexIndices.get(i));
-
-                if (!normalIndices.isEmpty()) {
-                    writer.write("/" + normalIndices.get(i) + 1);
+                if(!textureVertexIndices.isEmpty()){
+                writer.write(vertexIndices.get(i) + 1 + "/" + (textureVertexIndices.get(i) + 1));
                 }
-
+                else{
+                    writer.write(String.valueOf(vertexIndices.get(i) + 1));
+                }
+                if (!normalIndices.isEmpty()) {
+                    if(textureVertexIndices.isEmpty()){
+                        writer.write("/");
+                    }
+                    writer.write("/" + (normalIndices.get(i) + 1));
+                }
                 writer.write(" ");
             }
             writer.newLine();
-        }
+
     }
 
 
 
 
-}
+}}

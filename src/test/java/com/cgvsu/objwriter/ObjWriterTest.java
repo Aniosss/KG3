@@ -4,6 +4,7 @@ import com.cgvsu.math.Vector2f;
 import com.cgvsu.math.Vector3f;
 import com.cgvsu.model.Model;
 import com.cgvsu.model.Polygon;
+import com.cgvsu.objreader.ObjReader;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +12,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -21,29 +24,18 @@ class ObjWriterTest {
     @Test
     void write() throws IOException {
         Model model = createSampleModel();
-        String fileName = "test.obj";
+        String fileName = "model_norm.obj";
         ObjWriter.write(fileName, model);
+        Path path = Path.of(fileName);
+        String fileContent = Files.readString(path);
+        Model testModel = ObjReader.read(fileContent);
+        int vertexCount = testModel.vertices.size();
+        int textureVertexCount = testModel.textureVertices.size();
+        int normalCount = testModel.normals.size();
+        int polygonCount = testModel.polygons.size();
         assertTrue(new File(fileName).exists());
-        BufferedReader reader = new BufferedReader(new FileReader(fileName));
-        String line;
-        int vertexCount = 0;
-        int textureVertexCount = 0;
-        int normalCount = 0;
-        int polygonCount = 0;
 
-        while ((line = reader.readLine()) != null) {
-            if (line.startsWith("v ")) {
-                vertexCount++;
-            } else if (line.startsWith("vt ")) {
-                textureVertexCount++;
-            } else if (line.startsWith("vn ")) {
-                normalCount++;
-            } else if (line.startsWith("f ")) {
-                polygonCount++;
-            }
-        }
 
-        reader.close();
 
         assertEquals(3, vertexCount);
         assertEquals(3, textureVertexCount);
@@ -88,4 +80,114 @@ class ObjWriterTest {
         return model;
     }
 
-}
+    @Test
+    public void testWriteModelWithoutTextureAndNormals() throws IOException {
+        Model model = new Model();
+
+        model.vertices.add(new Vector3f(1.0f, 2.0f, 3.0f));
+        model.vertices.add(new Vector3f(4.0f, 5.0f, 6.0f));
+        model.vertices.add(new Vector3f(7.0f, 8.0f, 9.0f));
+
+        Polygon polygon = new Polygon();
+        polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 1, 2)));
+
+        model.polygons.add(polygon);
+
+        String fileName = "model_without_texture_normals.obj";
+        ObjWriter.write(fileName, model);
+        Path path = Path.of(fileName);
+        String fileContent = Files.readString(path);
+        Model testModel = ObjReader.read(fileContent);
+        int vertexCount = testModel.vertices.size();
+        int textureVertexCount = testModel.textureVertices.size();
+        int normalCount = testModel.normals.size();
+        int polygonCount = testModel.polygons.size();
+        assertTrue(new File(fileName).exists());
+
+
+
+        assertEquals(3, vertexCount);
+        assertEquals(0, textureVertexCount);
+        assertEquals(0, normalCount);
+        assertEquals(1, polygonCount);
+    }
+
+
+    @Test
+    public void testWriteModelWithTextureWithoutNormals() throws IOException {
+        Model model = new Model();
+        model.vertices.add(new Vector3f(1.0f, 2.0f, 3.0f));
+        model.vertices.add(new Vector3f(4.0f, 5.0f, 6.0f));
+        model.vertices.add(new Vector3f(7.0f, 8.0f, 9.0f));
+        model.textureVertices.add(new Vector2f(0.0f, 0.0f));
+        model.textureVertices.add(new Vector2f(1.0f, 1.0f));
+        model.textureVertices.add(new Vector2f(2.0f, 2.0f));
+
+        Polygon polygon = new Polygon();
+        polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 1, 2)));
+        polygon.setTextureVertexIndices(new ArrayList<>(Arrays.asList(0, 1, 2)));
+        model.polygons.add(polygon);
+
+        String fileName = "model_with_texture_without_normals.obj";
+
+        ObjWriter.write(fileName, model);
+
+        Path path = Path.of(fileName);
+        String fileContent = Files.readString(path);
+
+        Model testModel = ObjReader.read(fileContent);
+
+        int vertexCount = testModel.vertices.size();
+        int textureVertexCount = testModel.textureVertices.size();
+        int normalCount = testModel.normals.size();
+        int polygonCount = testModel.polygons.size();
+        assertTrue(new File(fileName).exists());
+
+
+
+        assertEquals(3, vertexCount);
+        assertEquals(3, textureVertexCount);
+        assertEquals(0, normalCount);
+        assertEquals(1, polygonCount);
+    }
+    @Test
+    public void testWriteModelWithoutTextureAndWithNormals() throws IOException {
+        Model model = new Model();
+
+        model.vertices.add(new Vector3f(1.0f, 2.0f, 3.0f));
+        model.vertices.add(new Vector3f(4.0f, 5.0f, 6.0f));
+        model.vertices.add(new Vector3f(7.0f, 8.0f, 9.0f));
+
+        Vector3f normal1 = new Vector3f(0.7f, 0.8f, 0.9f);
+        Vector3f normal2 = new Vector3f(1.0f, 1.1f, 1.2f);
+        Vector3f normal3 = new Vector3f(1.3f, 1.4f, 1.5f);
+
+        model.normals.add(normal1);
+        model.normals.add(normal2);
+        model.normals.add(normal3);
+
+        Polygon polygon = new Polygon();
+        polygon.setVertexIndices(new ArrayList<>(Arrays.asList(0, 1, 2)));
+        polygon.setNormalIndices(new ArrayList<>(Arrays.asList(0, 1, 2)));
+
+        model.polygons.add(polygon);
+
+        String fileName = "model_without_texture_with_normals.obj";
+        ObjWriter.write(fileName, model);
+        Path path = Path.of(fileName);
+        String fileContent = Files.readString(path);
+        Model testModel = ObjReader.read(fileContent);
+        int vertexCount = testModel.vertices.size();
+        int textureVertexCount = testModel.textureVertices.size();
+        int normalCount = testModel.normals.size();
+        int polygonCount = testModel.polygons.size();
+        assertTrue(new File(fileName).exists());
+
+
+
+        assertEquals(3, vertexCount);
+        assertEquals(0, textureVertexCount);
+        assertEquals(3, normalCount);
+        assertEquals(1, polygonCount);
+    }
+ }
